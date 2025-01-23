@@ -18,6 +18,7 @@
 """
    Command line script for Python version of GOBNILP
 """
+#checking git works
 
 __author__ = "James Cussens"
 __email__ = "james.cussens@york.ac.uk"

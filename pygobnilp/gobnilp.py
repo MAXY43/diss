@@ -59,7 +59,7 @@ try:
         DiscreteData, ContinuousData,
         BDeu, BGe,
         DiscreteLL, DiscreteBIC, DiscreteAIC,
-        GaussianLL, GaussianBIC, GaussianAIC, GaussianL0)
+        GaussianLL, GaussianBIC, GaussianAIC, GaussianL0, fNML)
 except ImportError as e:
     print("Could not import score generating code!")
     print(e)
@@ -1066,7 +1066,7 @@ class Gobnilp(Model):
         self._known_local_scores = frozenset([
             'BDeu','BGe',
             'DiscreteLL', 'DiscreteBIC', 'DiscreteAIC',
-            'GaussianLL', 'GaussianBIC', 'GaussianAIC', 'GaussianL0'])
+            'GaussianLL', 'GaussianBIC', 'GaussianAIC', 'GaussianL0', 'fNML'])
 
     def _getmipvars(self,vtype):
         try:
@@ -3822,7 +3822,7 @@ class Gobnilp(Model):
                     local_score_fun_temp = BGe(self._data, nu=nu, alpha_mu=alpha_mu, alpha_omega=alpha_omega).bge_score
                 else:
                     klass = globals()[score]
-                    if score in frozenset(["DiscreteBIC", "DiscreteAIC","GaussianL0"]):
+                    if score in frozenset(["DiscreteBIC", "DiscreteAIC","GaussianL0","fNML"]):
                         local_score_fun_temp = klass(self._data,k=k).score
                     elif score in frozenset(["GaussianBIC", "GaussianAIC"]):
                         local_score_fun_temp = klass(self._data,k=k,sdresidparam=sdresidparam).score

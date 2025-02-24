@@ -1074,7 +1074,7 @@ class BDeu(DiscreteData):
             raise ValueError('alpha (equivalent sample size) must be positive but was give {0}'.format(alpha))
         self._alpha = alpha
 
-    def clear_cache():
+    def clear_cache(self):
         '''Empty the cache of stored BDeu component scores
 
         This should be called, for example, if new scores are being computed
@@ -1384,3 +1384,40 @@ class BGe(ContinuousData):
                 self.bge_component(list(parents)+[child]) -
                 self.bge_component(parents), None)
 
+class fNML(AbsDiscreteLLScore):
+    def __init__(self, data):
+        c_table = createCTable(self.data_length() ,max(self.arities()))
+        _AbsLLPenalised.__init__(self, data)
+        self._child_penalties = {v: math.log(c_table[self.data_length() ,self.arities()]) for v in self._variables}
+
+import math
+
+def createCTable(N,K):
+    c_array = np.zeros((N,K))
+    c_array[:, 1] = 1
+    c_array[0, :] = 1
+    for row in range(1,N):
+        temp_var = 0
+        for h in range(0, row):
+            choice_term = choice(row, h)
+            term1 = (h / row) ** h if h > 0 else 1
+            term2 = ((row-h) / N) ** (row - h)
+            temp_var += choice_term * term1 * term2
+        #c_array[row, 2] = sum((choice(row, h)) * np.power((h/row),h) * np.power(((row - h)/ N),(row - h)) for h in range(1,row))
+
+        c_array[row, 2] = temp_var
+
+    for row in range(1,N):
+        for column in range(3,K):
+            if column - 2 == 0:
+                continue
+            c_array[row,column] = c_array[row,column-1] + (row/column-2)*c_array[row,column-2]
+
+    print(c_array)
+    return c_array
+
+def choice(n,k):
+    from math import comb
+    return comb(n, k)
+
+createCTable(100,10)

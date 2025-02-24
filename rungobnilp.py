@@ -41,7 +41,7 @@ parser.add_argument("--score", default="BDeu",
                     help="""Name of scoring function used for computing local scores. Must be one
                     of the following: BDeu, BGe, DiscreteLL,
                     DiscreteBIC, DiscreteAIC, GaussianLL, GaussianBIC,
-                    GaussianAIC, GaussianL0.""")
+                    GaussianAIC, GaussianL0., fNML""")
 parser.add_argument("--k", default=1,type=float,
                     help="""Penalty multiplier for penalised log-likelihood scores (eg BIC, AIC) or tuning parameter ('lambda^2) for l_0
                     penalised Gaussian scoring (as per van de Geer and Buehlmann)""")

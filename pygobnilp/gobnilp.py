@@ -65,6 +65,8 @@ except ImportError as e:
     print(e)
 
 
+
+
 try:
     import networkx as nx
     from networkx.algorithms.moral import moral_graph
@@ -3798,6 +3800,7 @@ class Gobnilp(Model):
             if local_scores_source is None:
                 # no data yet, so read it in
                 if data_type == 'discrete':
+                    print("Discrete data", DiscreteData(data_source, varnames=varnames, arities=arities))
                     self._data = DiscreteData(data_source, varnames=varnames, arities=arities) 
                 elif data_type == 'continuous':
                     self._data = ContinuousData(data_source, varnames=varnames, header=header,
@@ -3822,10 +3825,12 @@ class Gobnilp(Model):
                     local_score_fun_temp = BGe(self._data, nu=nu, alpha_mu=alpha_mu, alpha_omega=alpha_omega).bge_score
                 else:
                     klass = globals()[score]
-                    if score in frozenset(["DiscreteBIC", "DiscreteAIC","GaussianL0","fNML"]):
+                    if score in frozenset(["DiscreteBIC", "DiscreteAIC","GaussianL0"]):
                         local_score_fun_temp = klass(self._data,k=k).score
                     elif score in frozenset(["GaussianBIC", "GaussianAIC"]):
                         local_score_fun_temp = klass(self._data,k=k,sdresidparam=sdresidparam).score
+                    elif score in frozenset(["fNML"]):
+                        local_score_fun_temp = klass(self._data).score
                     else:
                         local_score_fun_temp = klass(self._data).score
 

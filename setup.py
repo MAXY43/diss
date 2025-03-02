@@ -1,9 +1,11 @@
-import setuptools
+from setuptools import setup, Extension
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-setuptools.setup(
+adtree_module = Extension('adtree', sources = ['adtree.c'])
+
+setup(
     name="pygobnilp", 
     version="1.0",
     author="James Cussens",
@@ -28,4 +30,9 @@ setuptools.setup(
         "Operating System :: OS Independent"
     ],
     python_requires='>=3.6',
+)
+setup(
+    name='adtree',
+    version='1.0',
+    ext_modules=[adtree_module]
 )

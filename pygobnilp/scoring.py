@@ -24,6 +24,7 @@ __email__ = "james.cussens@bristol.ac.uk"
 from math import lgamma, log, pi
 from itertools import combinations
 
+'''from PyQt5 import find_qt'''
 from scipy.special import digamma, gammaln
 from scipy.stats import norm, entropy
 
@@ -1173,6 +1174,7 @@ class BDeu(DiscreteData):
         #james_ub = self.upper_bound_james(child,parents)
         
         #return parent_score - family_score, min(simple_ub,james_ub)
+        print(self.contab(parents))
         return parent_score - family_score, simple_ub
 
         
@@ -1384,13 +1386,41 @@ class BGe(ContinuousData):
                 self.bge_component(list(parents)+[child]) -
                 self.bge_component(parents), None)
 
-class fNML(AbsDiscreteLLScore):
-    def __init__(self, data):
-        c_table = createCTable(self.data_length() ,max(self.arities()))
-        _AbsLLPenalised.__init__(self, data)
-        self._child_penalties = {v: math.log(c_table[self.data_length() ,self.arities()]) for v in self._variables}
 
-import math
+class fNML(AbsDiscreteLLScore):
+
+    def __init__(self, data):
+        _AbsLLPenalised.__init__(self, data)
+        self._entropy_cache = {}
+        self._child_penalties = None
+
+    def score(self, child, parents):
+        this_ll_score, numinsts = self.ll_score(child, parents)
+        if numinsts is None:
+            raise ValueError('Too many joint instantiations of parents {0} to compute penalty'.format(parents))
+        counts = self.find_counts(parents)
+        self.cal_child_penalties(child, parents, counts)
+        penalty = numinsts * self._child_penalties[child]
+        # number of parent insts will at least double if any added
+        return this_ll_score - penalty, None
+
+    def cal_child_penalties(self,child, parents, counts):
+        c_table = createCTable(10000,10000)
+        qi = find_qi(self)
+        penalty = 0
+        for i in range(qi):
+            penalty += c_table[counts[i],self.arity(child)]
+        self._child_penalties = {v: penalty for v in self._variables}
+
+    def find_counts(self, parents):
+        counts = [self.contab(parents)]
+        return counts
+
+def find_qi(self):
+    qi = 1
+    for items in self.arities():
+        qi *= self.arities()[items]
+    return qi
 
 def createCTable(N,K):
     c_array = np.zeros((N,K))
@@ -1420,4 +1450,6 @@ def choice(n,k):
     from math import comb
     return comb(n, k)
 
-createCTable(100,10)
+createCTable(100,100)
+
+

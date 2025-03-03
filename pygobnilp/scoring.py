@@ -1386,6 +1386,7 @@ class BGe(ContinuousData):
                 self.bge_component(list(parents)+[child]) -
                 self.bge_component(parents), None)
 
+from functools import lru_cache
 
 class fNML(AbsDiscreteLLScore):
 
@@ -1393,63 +1394,89 @@ class fNML(AbsDiscreteLLScore):
         _AbsLLPenalised.__init__(self, data)
         self._entropy_cache = {}
         self._child_penalties = None
+        self._ctable = None
 
     def score(self, child, parents):
         this_ll_score, numinsts = self.ll_score(child, parents)
         if numinsts is None:
             raise ValueError('Too many joint instantiations of parents {0} to compute penalty'.format(parents))
-        counts = self.find_counts(parents)
+        counts = self.find_counts(child, parents)
         self.cal_child_penalties(child, parents, counts)
         penalty = numinsts * self._child_penalties[child]
         # number of parent insts will at least double if any added
         return this_ll_score - penalty, None
 
     def cal_child_penalties(self,child, parents, counts):
-        c_table = createCTable(10000,10000)
-        qi = find_qi(self)
+        c_table = self.createCTable(10000,10000)
+        qi = self.find_qi(parents)
         penalty = 0
         for i in range(qi):
-            penalty += c_table[counts[i],self.arity(child)]
+            penalty += c_table[int(counts[0][i]),int(self.arity(child))]
         self._child_penalties = {v: penalty for v in self._variables}
 
-    def find_counts(self, parents):
-        counts = [self.contab(parents)]
-        return counts
+    def find_counts(self, child, parents):
+        parents_list = list(parents)
+        variables = parents_list + [child]
+        contab = self.contab(variables)
+        print(contab)
 
-def find_qi(self):
-    qi = 1
-    for items in self.arities():
-        qi *= self.arities()[items]
-    return qi
+        qi = self.find_qi(parents)
+        if contab.ndim == 1:
+            contab = contab.reshape(1, -1)
+            contab = np.array(contab, dtype=np.float64)
+        else:
+            contab = np.array(contab, dtype=np.float64)
+        return contab
 
-def createCTable(N,K):
-    c_array = np.zeros((N,K))
-    c_array[:, 1] = 1
-    c_array[0, :] = 1
-    for row in range(1,N):
-        temp_var = 0
-        for h in range(0, row):
-            choice_term = choice(row, h)
-            term1 = (h / row) ** h if h > 0 else 1
-            term2 = ((row-h) / N) ** (row - h)
-            temp_var += choice_term * term1 * term2
-        #c_array[row, 2] = sum((choice(row, h)) * np.power((h/row),h) * np.power(((row - h)/ N),(row - h)) for h in range(1,row))
+    def find_qi(self, parents):
+        qi = 1
+        for parent in parents:
+            qi *= self.arity(parent)
+        return qi
 
-        c_array[row, 2] = temp_var
+    def createCTable(self,N,K):
+        import numpy as np
 
-    for row in range(1,N):
-        for column in range(3,K):
-            if column - 2 == 0:
-                continue
-            c_array[row,column] = c_array[row,column-1] + (row/column-2)*c_array[row,column-2]
+        if self._ctable is not None and self._ctable.shape[0] >= N + 1 and self._ctable.shape[1] >= K + 1:
+            return self._ctable[:N + 1, :K + 1]
+        else:
+            c_array = np.zeros((N+1,K+1))
+            c_array[:, 0] = 1
+            c_array[0, :] = 1
+            for row in range(1,N+1):
+                if N > 100:
+                    c_array[row,2] = self.szpankowskiApproximation(row)
+                else:
+                    temp_var = 0
+                    for h in range(0, row + 1):
+                        choice_term = self.logcomb(row, h)
+                        term1 = h * np.log(h/row) if h > 0 else 0
+                        term2 = (row-h) * np.log((row - h)/ N) if (row - h) != 0 else 0
+                        log_total = term1 + term2 + choice_term
+                        temp_var += np.exp(log_total)
+                    #c_array[row, 2] = sum((choice(row, h)) * np.power((h/row),h) * np.power(((row - h)/ N),(row - h)) for h in range(1,row))
 
-    print(c_array)
-    return c_array
+                    c_array[row, 2] = temp_var
 
-def choice(n,k):
-    from math import comb
-    return comb(n, k)
+            for row in range(1,N+1):
+                for column in range(3,K+1):
+                    if column - 2 == 0:
+                        continue
+                    c_array[row,column] = c_array[row,column-1] + (row/(column-2))*c_array[row,column-2]
 
-createCTable(100,100)
+            self._ctable = c_array
+            return c_array
+
+    def szpankowskiApproximation(self, n):
+        return (n * np.pi / 2) * np.exp(np.sqrt(8 / (9 * n * np.pi)) + (3 * np.pi - 16) / (36 * n * np.pi))
+
+    def choice(self,n,k):
+        from scipy.special import comb
+        return comb(n, k, exact=True)
+
+    def logcomb(self,n,k):
+        from scipy.special import gammaln
+        return gammaln(n + 1) - gammaln(k + 1) - gammaln(n - k + 1)
+
 
 

@@ -84,7 +84,7 @@ from continuous data using either BGe scoring or penalised Gaussian MLE scores (
 on the command line. (The format for continuous data is similar to that
 for discrete data except there is no line for arity.) For example
 
-`python rungobnilp.py --score BGe data/gaussian.dat`
+`python rungobnilp.py --score fNML data/asia_10000.dat`
 
 or, to find a higher scoring Gaussian network (with BGe score
 -53258.9402):

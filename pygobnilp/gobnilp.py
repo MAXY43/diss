@@ -460,10 +460,16 @@ class BN(nx.DiGraph):
         This method uses the "semi-naive evaluation" algorithm for computing 
         the relevant least Herbrand model, which is the set of all the compelled edges.
 
+        Raises:
+            ValueError: If the graph is not a DAG
+
         Args:
          compelled (iter): Edges to set as compelled in addition to those involved in
           *immoralities*. 
         '''
+
+        if not nx.is_directed_acyclic_graph(self):
+            raise ValueError('The graph is not a DAG')
 
         new_compelled = list(compelled)
         num_uncompelled_parents = {}
@@ -3224,7 +3230,7 @@ class Gobnilp(Model):
         dom = {}
         found = 0
         for i, solval in enumerate(fv_vals):
-            if solval > 0:
+            if solval > 0.5:
                 child = child_list[i]
                 parentset = parentset_list[i]
                 dom[child] = parentset
@@ -3830,6 +3836,7 @@ class Gobnilp(Model):
                     elif score in frozenset(["GaussianBIC", "GaussianAIC"]):
                         local_score_fun_temp = klass(self._data,k=k,sdresidparam=sdresidparam).score
                     elif score in frozenset(["fNML"]):
+                        print("Check")
                         local_score_fun_temp = klass(self._data).score
                     else:
                         local_score_fun_temp = klass(self._data).score

@@ -1452,8 +1452,6 @@ class fNML(AbsDiscreteLLScore):
 
         if not parents:
             penalty += c_table[int(counts[0][0]),int(self.arity(child))]
-            print(counts[0][0], self.arity(child))
-            print(penalty)
 
         self._child_penalties[child] = penalty
 
